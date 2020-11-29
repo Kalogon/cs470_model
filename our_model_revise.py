@@ -11,7 +11,7 @@ Original file is located at
 # login with your google account and type authorization code to mount on your google drive.
 import os
 
-## 학습 코드
+# 학습 코드
 import numpy as np
 import json
 import PIL
@@ -32,11 +32,12 @@ from efficientnet_pytorch import EfficientNet
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
+
 class Mydataset(Dataset):
-    def __init__(self,csvfile,root_dir,transform=None):
-        self.landmarks_frame=pd.read_csv(csvfile)
-        self.root_dir=root_dir
-        self.transform=transform
+    def __init__(self, csvfile, root_dir, transform=None):
+        self.landmarks_frame = pd.read_csv(csvfile)
+        self.root_dir = root_dir
+        self.transform = transform
         self.diagnose_dict = {"melanoma": 0, "nevus": 1}
 
     def __len__(self):
@@ -66,12 +67,14 @@ class Mydataset(Dataset):
             return [0, 0, 0, 0, 1, 0]
         elif site == "oral/genital":
             return [0, 0, 0, 0, 0, 1]
-        else: assert(0)
+        else:
+            assert(0)
 
-    def __getitem__(self,idx):
+    def __getitem__(self, idx):
         if torch.is_tensor(idx):
             idx = idx.tolist()
-        img_name = os.path.join(self.root_dir,self.landmarks_frame.iloc[idx, 0])
+        img_name = os.path.join(
+            self.root_dir, self.landmarks_frame.iloc[idx, 0])
         image = io.imread(img_name+".jpg")
         image = transforms.ToTensor()(image)
         if self.transform:
@@ -85,7 +88,7 @@ class Mydataset(Dataset):
 
         sex = self.landmarks_frame.iloc[idx, 2]
         sex = self.one_hot_sex(sex)
-        
+
         age = self.landmarks_frame.iloc[idx, 3]
         age = self.one_hot_age(age)
 
@@ -99,11 +102,10 @@ class Mydataset(Dataset):
         metadata = metadata.to(device)
         diagnose = torch.tensor(diagnose, dtype=torch.long)
         diagnose = diagnose.to(device)
-        
+
         # landmarks = landmarks.astype('float').reshape(-1, 2)
         sample = {'image': image, 'metadata': metadata, 'diagnose': diagnose}
         # sample = np.array([image, image])
-        
 
         return sample
 
@@ -112,16 +114,17 @@ class MyNetwork(nn.Module):
     def __init__(self):
         super(MyNetwork, self).__init__()
         cnn_model_name = 'efficientnet-b1'
-        self.cnn_model = EfficientNet.from_pretrained(cnn_model_name, num_classes=2).to(device)
+        self.cnn_model = EfficientNet.from_pretrained(
+            cnn_model_name, num_classes=2).to(device)
         print(EfficientNet.get_image_size(cnn_model_name))
-        self.cnn = nn.Sequential (
+        self.cnn = nn.Sequential(
             nn.Linear(1280, 128),
             nn.BatchNorm1d(128),
             nn.ReLU(),
             nn.Dropout(p=0.3),
         )
 
-        self.meta = nn.Sequential (
+        self.meta = nn.Sequential(
             nn.Linear(18, 128),
             nn.BatchNorm1d(128),
             nn.ReLU(),
@@ -134,9 +137,9 @@ class MyNetwork(nn.Module):
             nn.BatchNorm1d(128),
             nn.ReLU(),
             nn.Dropout(p=0.3),
-        ) 
+        )
 
-        self.post = nn.Sequential (
+        self.post = nn.Sequential(
             nn.Linear(256, 128),
             nn.BatchNorm1d(128),
             nn.ReLU(),
@@ -146,21 +149,17 @@ class MyNetwork(nn.Module):
             nn.ReLU(),
             nn.Dropout(p=0.3),
             nn.Linear(32, 2),
-            nn.BatchNorm1d(2),
-            nn.ReLU(),
-            nn.Dropout(p=0.3),
         )
 
         ################################
 
     def forward(self, image, metadata):
         image = self.cnn_model.extract_features(image)
-        
         image = nn.AdaptiveAvgPool2d(output_size=(1, 1))(image)
         image = torch.squeeze(image, -1)
         image = torch.squeeze(image, -1)
         img_out = self.cnn(image)
         meta_out = self.meta(metadata)
-        output = self.post(torch.cat((img_out, meta_out), dim = 1))
+        output = self.post(torch.cat((img_out, meta_out), dim=1))
         #######################################################################
         return output
