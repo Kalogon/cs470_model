@@ -21,6 +21,10 @@ from sklearn import metrics
 model = MyNetwork().to(device)
 print(sum(p.numel() for p in model.parameters() if p.requires_grad))
 
+#############################################
+# Testing code for trained model.
+#############################################
+
 try:
     model.load_state_dict(torch.load(
         "/content/drive/My Drive/2020Fall/인공개 팀플/results/efficient_b1_model_final.pt"))
@@ -40,18 +44,16 @@ with torch.no_grad():
         y = dictionary['diagnose']
         meta = dictionary['metadata']
 
-        logit = model(x, meta)
-        loss = nn.CrossEntropyLoss()(logit, y)
+        logit = model(x, meta)                                                  # Feed `x` into the network, get an output, and keep it in a variable called `logit`.
+        loss = nn.CrossEntropyLoss()(logit, y)                                  # Compute loss using `logit` and `y`, and keep it in a variable called `loss`.
         y_pred = logit.argmax(dim=1)
-        accuracy = (y_pred == y).float().mean()
+        accuracy = (y_pred == y).float().mean()                                 # Compute accuracy of this batch using `logit`, and keep it in a variable called 'accuracy'.
         f_y_pred = y_pred.cpu().numpy()
-        # print(y_pred)
         f_y = y.cpu().numpy()
-        # print(y)
-        # print(f1_score(f_y_pred, f_y))
-        precision += metrics.precision_score(f_y_pred, f_y) * x.shape[0]
-        recall += metrics.recall_score(f_y_pred, f_y) * x.shape[0]
-        f_score += metrics.f1_score(f_y_pred, f_y) * x.shape[0]
+
+        precision /= test_num_data                                              # Calculate precision
+        recall /= test_num_data                                                 # Calculate recall
+        f_score /= test_num_data                                                # Calculate F1 score
         test_loss += loss.item()*x.shape[0]
         test_accuracy += accuracy.item()*x.shape[0]
         test_num_data += x.shape[0]

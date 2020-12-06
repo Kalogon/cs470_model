@@ -7,8 +7,6 @@ Original file is located at
     https://colab.research.google.com/drive/1ninlgsAoc9jBn2J3OUjmTw3dxYEXKYvr
 """
 
-# mount drive https://datascience.stackexchange.com/questions/29480/uploading-images-folder-from-my-system-into-google-colab
-# login with your google account and type authorization code to mount on your google drive.
 import os
 
 # 학습 코드
@@ -32,6 +30,14 @@ from efficientnet_pytorch import EfficientNet
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
+#############################################
+# Mydataset class reads csvfile.
+# This csvfile contains train image id and it's additional info of the patient(metadata). 
+# Then it crops the image id and its metadata.
+# Image is loaded by this id.
+# The metadata is converted into the concatanated one-hot-vector in here.
+# We used 3 kinds of metadata; sex, age, and symptom position.
+#############################################
 
 class Mydataset(Dataset):
     def __init__(self, csvfile, root_dir, transform=None):
@@ -80,7 +86,6 @@ class Mydataset(Dataset):
         if self.transform:
             image = self.transform(image)
 
-        # sample = image
         try:
             diagnose = self.diagnose_dict[self.landmarks_frame.iloc[idx, 5]]
         except:
@@ -103,12 +108,13 @@ class Mydataset(Dataset):
         diagnose = torch.tensor(diagnose, dtype=torch.long)
         diagnose = diagnose.to(device)
 
-        # landmarks = landmarks.astype('float').reshape(-1, 2)
         sample = {'image': image, 'metadata': metadata, 'diagnose': diagnose}
-        # sample = np.array([image, image])
 
         return sample
 
+#############################################
+# Actual framework of our model.
+#############################################
 
 class MyNetwork(nn.Module):
     def __init__(self):
@@ -117,14 +123,14 @@ class MyNetwork(nn.Module):
         self.cnn_model = EfficientNet.from_pretrained(
             cnn_model_name, num_classes=2).to(device)
         print(EfficientNet.get_image_size(cnn_model_name))
-        self.cnn = nn.Sequential(
+        self.cnn = nn.Sequential(                                   #EfficientNet layer for image
             nn.Linear(1280, 128),
             nn.BatchNorm1d(128),
             nn.ReLU(),
             nn.Dropout(p=0.3),
         )
 
-        self.meta = nn.Sequential(
+        self.meta = nn.Sequential(                                  #MLP layer for metadata 
             nn.Linear(18, 128),
             nn.BatchNorm1d(128),
             nn.ReLU(),
@@ -139,7 +145,7 @@ class MyNetwork(nn.Module):
             nn.Dropout(p=0.3),
         )
 
-        self.post = nn.Sequential(
+        self.post = nn.Sequential(                                  #Post-process layer 
             nn.Linear(256, 128),
             nn.BatchNorm1d(128),
             nn.ReLU(),
@@ -158,8 +164,8 @@ class MyNetwork(nn.Module):
         image = nn.AdaptiveAvgPool2d(output_size=(1, 1))(image)
         image = torch.squeeze(image, -1)
         image = torch.squeeze(image, -1)
-        img_out = self.cnn(image)
-        meta_out = self.meta(metadata)
-        output = self.post(torch.cat((img_out, meta_out), dim=1))
+        img_out = self.cnn(image)                                   # EffieicntNet extracts features from image.
+        meta_out = self.meta(metadata)                              # Metadatas are feed into MLP layer.
+        output = self.post(torch.cat((img_out, meta_out), dim=1))   # Concat 2 outputs, and post-process to convert the output dimension into 2(nevus/melanoma).
         #######################################################################
         return output
