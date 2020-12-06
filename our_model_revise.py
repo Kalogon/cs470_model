@@ -33,7 +33,7 @@ from efficientnet_pytorch import EfficientNet
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 
-class Mydataset(Dataset):
+class Mydataset(Dataset):       #Mydataset class reads csvfile and crop the image id and metadata
     def __init__(self, csvfile, root_dir, transform=None):
         self.landmarks_frame = pd.read_csv(csvfile)
         self.root_dir = root_dir
