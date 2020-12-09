@@ -1,5 +1,24 @@
 ## Melanoma Diagnosis using CNN
 ------------------------------
+## Project Tree
+```
+.
+├── colab                     # runnable code in colab (run this)
+│   ├── model.ipynb           # model code
+│   ├── model_smote.ipynb     # smote model code 
+│   └── score_calc.ipynb      # evaluating code
+│
+├── model                     # same with colab but seperated
+│   ├── model.py              # model code
+│   ├── smote.py              # apply smote code 
+│   ├── score_calc.py         # evaluating code
+│   └── training.py           # training code
+│
+├── img                       # img
+│   └── model.PNG             # overall model picture
+└── README.md
+```
+
 ## Data
 #### 1. Dataset
 [ISIC 2020 challenge database](https://challenge2020.isic-archive.com/)
