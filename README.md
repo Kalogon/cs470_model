@@ -25,7 +25,7 @@ Similar with FC layer for metadata and it finally classify to two classes (melan
    **learning rate**: 0.0001  
    **learning rate decay**: 0.95  
    **weight decay**: 0.001  
-   **learning rate scheduler**: StepLR (gamma = 0.05)  
+   **learning rate scheduler**: StepLR (gamma = 0.95)  
 
 #### 2. optimizer
    We used Adam as the optimizer. The Adam optimizer has the advantage of having a momentum and is able to learn faster and get out of the local minimum, and has the advantage of using an adaptive learning rate like RMSprop.

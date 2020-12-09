@@ -20,50 +20,49 @@ from sklearn import metrics
 #############################################
 # Training code.
 #############################################
-
 learning_rate = 0.0001
-learning_rate_decay = 0.95
-epoch = 10
+epoch = 20
 training_loss = 0
-optimizer = optim.Adam(
-    model.parameters(), lr=learning_rate, weight_decay=0.001)
-scheduler = StepLR(optimizer, step_size=1, gamma=0.05)                      #Learning rate decay to find optimal better
-start_time = time.time()
-print("Training Start!")
-for ep in range(epoch):                                                     #Training process.
-    learning_rate = learning_rate * learning_rate_decay
+train_loss_list=[]
+validation_loss_list=[]
+optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay = 0.001)
+scheduler = StepLR(optimizer, step_size=1, gamma=0.95)                          #Learning rate decay to find optimal better
+print("시작")
+for ep in range(epoch):                                                         #Training process.
     training_loss = 0
     training_accuracy = 0
     train_num_data = 0
     model.train()
+    st=time.time()
     for batch_idx, dictionary in enumerate(train_dataloader):
-        x = dictionary['image']                                             #  Send `x` and `y` to either cpu or gpu using `device` variable.
+        x = dictionary['image']                                                 #  Send `x` and `y` to either cpu or gpu using `device` variable.
         y = dictionary['diagnose']
         meta = dictionary['metadata']
 
-        logit = model(x, meta)                                              # Feed `x` into the network, get an output, and keep it in a variable called `logit`.
+        logit = model(x, meta)                                                  # Feed `x` into the network, get an output, and keep it in a variable called `logit`. 
 
-        accuracy = (logit.argmax(dim=1) == y).float().mean()                # Compute accuracy of this batch using `logit`, and keep it in a variable called 'accuracy'.
-        loss = nn.CrossEntropyLoss()(logit, y)                              # Compute loss using `logit` and `y`, and keep it in a variable called `loss`.
+        accuracy = (logit.argmax(dim=1) == y).float().mean()                    # Compute accuracy of this batch using `logit`, and keep it in a variable called 'accuracy'.
+        loss = nn.CrossEntropyLoss()(logit, y)                                  # Compute loss using `logit` and `y`, and keep it in a variable called `loss`.
         optimizer.zero_grad()
-        loss.backward()                                                     # backward the computed loss. 
-        optimizer.step()                                                    # update the network weights. 
-
+        loss.backward()                                                         # backward the computed loss. 
+        optimizer.step()                                                        # update the network weights. 
         training_loss += loss.item()*x.shape[0]
         training_accuracy += accuracy.item()*x.shape[0]
         train_num_data += x.shape[0]
 
+    scheduler.step()
     training_loss /= train_num_data
     training_accuracy /= train_num_data
     print(f'epoch: {ep} / training_loss : {training_loss:.3f}')
     print(f'epoch: {ep} / training_accuracy : {training_accuracy:.3f}')
-
-    model.eval()                                                            #Validation process. It's very similar to the training part, but not calculating gradient.
+    train_loss_list.append(training_loss)
+    
+    model.eval()                                                                #Validation process. It's very similar to the training part, but not calculating gradient.
     with torch.no_grad():
-        test_loss = 0.
-        test_accuracy = 0.
-        test_num_data = 0.
-        for batch_idx, dictionary in enumerate(test_dataloader):
+        validation_loss = 0.
+        validation_accuracy = 0.
+        validation_num_data = 0.
+        for batch_idx, dictionary in enumerate(validation_dataloader):
             x = dictionary['image']
             y = dictionary['diagnose']
             meta = dictionary['metadata']
@@ -73,11 +72,16 @@ for ep in range(epoch):                                                     #Tra
 
             accuracy = (logit.argmax(dim=1) == y).float().mean()
 
-            test_loss += loss.item()*x.shape[0]
-            test_accuracy += accuracy.item()*x.shape[0]
-            test_num_data += x.shape[0]
+            validation_loss += loss.item()*x.shape[0]
+            validation_accuracy += accuracy.item()*x.shape[0]
+            validation_num_data += x.shape[0]
 
-        test_loss /= test_num_data
-        test_accuracy /= test_num_data
-        print(f'epoch: {ep} / test_loss : {test_loss:.3f}')
-        print(f'epoch: {ep} / test_accuracy : {test_accuracy:.3f}')
+        validation_loss /= validation_num_data
+        validation_accuracy /= validation_num_data
+        validation_loss_list.append(validation_loss)
+        print(f'epoch: {ep} / validation_loss : {validation_loss:.3f}')
+        print(f'epoch: {ep} / validation_accuracy : {validation_accuracy:.3f}')
+        print(time.time()-st)
+
+plt.plot(np.arange(epoch),np.array(train_loss_list))
+plt.plot(np.arange(epoch),np.array(validation_loss_list))
