@@ -3,19 +3,25 @@
 ## Project Tree
 ```
 .
-├── colab                     # runnable code in colab (run this)
-│   ├── model.ipynb           # model code
-│   ├── model_smote.ipynb     # smote model code 
-│   └── score_calc.ipynb      # evaluating code
+├── colab                        # runnable code in colab (run this)
+│   ├── model.ipynb              # model code
+│   ├── model_smote.ipynb        # smote model code 
+│   └── score_calc.ipynb         # evaluating code
 │
-├── model                     # same with colab but seperated
-│   ├── model.py              # model code
-│   ├── smote.py              # apply smote code 
-│   ├── score_calc.py         # evaluating code
-│   └── training.py           # training code
+├── img                          # img
+│   └── model.PNG                # overall model picture
 │
-├── img                       # img
-│   └── model.PNG             # overall model picture
+├── model                        # trained model
+│   ├── efficient_b0_model.pt    # model with efficient-net b0
+│   ├── efficient_b1_model.pt    # model with efficient-net b1 
+│   └── smote_model_b1.pt        # smote applying model with efficient-net b1
+│
+├── src                          # same with colab but seperated
+│   ├── model.py                 # model code
+│   ├── smote.py                 # apply smote code 
+│   ├── score_calc.py            # evaluating code
+│   └── training.py              # training code
+│
 └── README.md
 ```
 
